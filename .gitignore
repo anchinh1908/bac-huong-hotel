@@ -1,7 +1,3 @@
-# ==========================================
-# GITIGNORE CHO DỰ ÁN BẮC HƯƠNG HOTEL
-# ==========================================
-
 # 1. FRONTEND (Vite / React / Node)
 frontend/node_modules/
 node_modules/

@@ -13,6 +13,7 @@ import Footer from './components/Footer';
 import DbAlertBanner from './components/DbAlertBanner';
 import DbErrorModal from './components/DbErrorModal';
 import NewBookingAlertModal from './components/NewBookingAlertModal';
+import RoomDetailModal from './components/RoomDetailModal';
 import { HOTEL_INFO, INITIAL_ROOMS, INITIAL_BOOKINGS } from './data/bacHuongData';
 import { Calendar, CheckCircle2, Clock, X, Shield, ArrowRight, Heart, Trash2, AlertTriangle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -53,6 +54,7 @@ export default function App() {
   const [isClientBookingsOpen, setIsClientBookingsOpen] = useState(false);
   const [isSavedRoomsOpen, setIsSavedRoomsOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [detailRoom, setDetailRoom] = useState(null);
   const [bookingSuccess, setBookingSuccess] = useState(null);
   const [cancelConfirmBooking, setCancelConfirmBooking] = useState(null);
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState('');
@@ -720,6 +722,7 @@ export default function App() {
                         key={room.id}
                         room={room}
                         onBook={setSelectedRoom}
+                        onViewDetail={setDetailRoom}
                         isSaved={savedRooms.some(r => r.id === room.id)}
                         onToggleSave={handleToggleSaveRoom}
                       />
@@ -829,6 +832,19 @@ export default function App() {
             onSubmitBooking={handleBookingSubmit}
             currentUser={user}
             onOpenAuth={() => setIsAuthModalOpen(true)}
+          />
+
+          {/* Modal Xem Chi Tiết Phòng (Interactive Album Gallery & Tiện Nghi Mở Rộng) */}
+          <RoomDetailModal 
+            room={detailRoom}
+            isOpen={!!detailRoom}
+            onClose={() => setDetailRoom(null)}
+            onBook={(room) => {
+              setDetailRoom(null);
+              setSelectedRoom(room);
+            }}
+            isSaved={detailRoom ? savedRooms.some(r => r.id === detailRoom.id) : false}
+            onToggleSave={handleToggleSaveRoom}
           />
 
           {/* 6. Modal Xem phòng đã đặt của khách */}
@@ -1137,6 +1153,10 @@ export default function App() {
             savedRooms={savedRooms}
             onRemoveSaved={handleRemoveSavedRoom}
             onBookRoom={(room) => setSelectedRoom(room)}
+            onViewDetail={(room) => {
+              setIsSavedRoomsOpen(false);
+              setDetailRoom(room);
+            }}
           />
         </div>
       )}

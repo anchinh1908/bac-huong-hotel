@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, Heart, Bed, User, ArrowRight, Trash2 } from 'lucide-react';
+import { X, Heart, Bed, User, ArrowRight, Trash2, Eye } from 'lucide-react';
 
-export default function SavedRoomsModal({ isOpen, onClose, savedRooms, onRemoveSaved, onBookRoom }) {
+export default function SavedRoomsModal({ isOpen, onClose, savedRooms, onRemoveSaved, onBookRoom, onViewDetail }) {
   if (!isOpen) return null;
 
   const formatCurrency = (amount) => {
@@ -75,7 +75,9 @@ export default function SavedRoomsModal({ isOpen, onClose, savedRooms, onRemoveS
                 <img 
                   src={room.image} 
                   alt={room.name} 
-                  style={{ width: '90px', height: '70px', borderRadius: '8px', objectFit: 'cover' }}
+                  onClick={() => onViewDetail && onViewDetail(room)}
+                  title="Nhấp để xem chi tiết phòng"
+                  style={{ width: '90px', height: '70px', borderRadius: '8px', objectFit: 'cover', cursor: 'pointer' }}
                 />
 
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -83,7 +85,22 @@ export default function SavedRoomsModal({ isOpen, onClose, savedRooms, onRemoveS
                     <span style={{ fontSize: '0.78rem', fontWeight: 700, background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px' }}>
                       {room.roomNumber}
                     </span>
-                    <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#1e293b', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <h4 
+                      onClick={() => onViewDetail && onViewDetail(room)}
+                      title="Nhấp để xem chi tiết phòng"
+                      style={{ 
+                        fontSize: '0.98rem', 
+                        fontWeight: 700, 
+                        color: '#1e293b', 
+                        margin: 0, 
+                        whiteSpace: 'nowrap', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.color = '#b45309'}
+                      onMouseLeave={e => e.currentTarget.style.color = '#1e293b'}
+                    >
                       {room.name}
                     </h4>
                   </div>
@@ -98,6 +115,28 @@ export default function SavedRoomsModal({ isOpen, onClose, savedRooms, onRemoveS
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => onViewDetail && onViewDetail(room)}
+                    title="Xem chi tiết ảnh & tiện nghi phòng"
+                    style={{
+                      background: '#f1f5f9',
+                      color: '#475569',
+                      border: '1px solid #cbd5e1',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Eye size={13} />
+                    <span>Chi tiết</span>
+                  </button>
+
                   <button
                     disabled={room.status && room.status !== 'AVAILABLE'}
                     onClick={() => {
