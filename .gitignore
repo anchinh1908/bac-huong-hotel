@@ -1,0 +1,43 @@
+# ==========================================
+# GITIGNORE CHO DỰ ÁN BẮC HƯƠNG HOTEL
+# ==========================================
+
+# 1. FRONTEND (Vite / React / Node)
+frontend/node_modules/
+node_modules/
+frontend/dist/
+dist/
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# 2. BACKEND (Spring Boot / Maven / Java)
+backend/target/
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+backend/.mvn/timing.properties
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# 3. MÔI TRƯỜNG & BẢO MẬT (Secrets / Config)
+.env
+*.env
+# Nếu muốn ẩn mật khẩu database & Gmail app password khi push Public repo:
+backend/src/main/resources/application.properties
+
+# 4. IDE & CÔNG CỤ SOẠN THẢO (VS Code, IntelliJ, Eclipse)
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+.DS_Store
+Thumbs.db
