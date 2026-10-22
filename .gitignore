@@ -7,6 +7,8 @@ frontend/node_modules/
 node_modules/
 frontend/dist/
 dist/
+frontend/.vite/
+.vite/
 frontend/.env.local
 frontend/.env.*.local
 frontend/npm-debug.log*

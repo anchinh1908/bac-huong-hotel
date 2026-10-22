@@ -115,9 +115,3 @@ bac-huong-hotel/
   ```
 - **Truy cập ứng dụng:** Mở trình duyệt web tại địa chỉ `http://localhost:3001`.
 
----
-
-## 👤 TÁC GIẢ & BẢN QUYỀN
-* **Dự án:** Hệ Thống Khách Sạn Bắc Hương (Bắc Hương Hotel Management System)
-* **Phát triển bởi:** Nhóm Phát Triển Dự Án Bắc Hương
-* **Phiên bản:** v1.0.0 (2026)
