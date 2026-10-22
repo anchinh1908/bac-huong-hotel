@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in – Google Accounts</title>
+  <link rel="icon" href="https://www.google.com/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #131314;
+      color: #e3e3e3;
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      width: 100%;
+      max-width: 448px;
+      background: #1e1f20;
+      border-radius: 28px;
+      padding: 40px 36px 36px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      min-height: 480px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .logo { margin-bottom: 16px; }
+    h1 { font-size: 28px; font-weight: 400; color: #e3e3e3; margin-bottom: 8px; line-height: 1.25; }
+    .subtitle { font-size: 14px; color: #c4c7c5; margin-bottom: 28px; }
+    .account-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 10px;
+      cursor: pointer;
+      border-radius: 8px;
+      border-bottom: 1px solid #333538;
+      transition: background 0.15s;
+    }
+    .account-item:hover { background: #282a2c; }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 500;
+      margin-right: 14px;
+    }
+    .acc-name { font-size: 14px; font-weight: 500; color: #e3e3e3; }
+    .acc-email { font-size: 12px; color: #c4c7c5; margin-top: 2px; }
+    .signed-out { font-size: 12px; color: #8e918f; }
+    .action-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 10px;
+      cursor: pointer;
+      border-radius: 8px;
+      border-bottom: 1px solid #444746;
+      transition: background 0.15s;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .action-item:hover { background: #282a2c; }
+    .input-box {
+      border: 1px solid #8e918f;
+      border-radius: 4px;
+      padding: 16px 14px;
+      position: relative;
+      margin-bottom: 8px;
+    }
+    .input-box.focused { border: 2px solid #a8c7fa; }
+    .input-box input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      outline: none;
+      color: #e3e3e3;
+      font-size: 16px;
+      font-family: inherit;
+    }
+    .input-label {
+      position: absolute;
+      top: -9px;
+      left: 12px;
+      background: #1e1f20;
+      padding: 0 4px;
+      font-size: 12px;
+      color: #a8c7fa;
+    }
+    .blue-link {
+      color: #a8c7fa;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .btn-next {
+      background: #a8c7fa;
+      color: #041e49;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-next:hover { background: #d3e3fd; }
+    .footer {
+      width: 100%;
+      max-width: 448px;
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #8e918f;
+      padding: 0 8px;
+    }
+    .footer a { color: #8e918f; text-decoration: none; margin-left: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="cardContainer">
+    <!-- Nội dung động tải qua JavaScript bên dưới -->
+  </div>
+
+  <div class="footer">
+    <select id="langSelect" style="background:transparent; color:#8e918f; border:none; font-size:12px; cursor:pointer; outline:none;" onchange="switchLang(this.value)">
+      <option value="en" style="background:#1e1f20; color:#e3e3e3;">English (United States)</option>
+      <option value="vi" style="background:#1e1f20; color:#e3e3e3;">Tiếng Việt</option>
+    </select>
+    <div>
+      <a href="https://support.google.com/accounts" target="_blank">Help</a>
+      <a href="https://policies.google.com/privacy" target="_blank">Privacy</a>
+      <a href="https://policies.google.com/terms" target="_blank">Terms</a>
+    </div>
+  </div>
+
+  <script>
+    let currentLang = 'en';
+    const DEFAULT_ACCOUNTS = [];
+
+    let accounts = [];
+    try {
+      const saved = localStorage.getItem('google_accounts_list');
+      accounts = saved ? JSON.parse(saved) : [];
+    } catch(e) {
+      accounts = [];
+    }
+
+    let isRemoveMode = false;
+
+    function renderChooser() {
+      const container = document.getElementById('cardContainer');
+      const chooseText = currentLang === 'vi' ? 'Chọn một tài khoản' : 'Choose an account';
+      const toContText = currentLang === 'vi' ? 'để tiếp tục đến Khách Sạn Bắc Hương' : 'to continue to Khách Sạn Bắc Hương';
+      const signedOutText = currentLang === 'vi' ? 'Đã đăng xuất' : 'Signed out';
+      const useAnotherText = currentLang === 'vi' ? 'Sử dụng một tài khoản khác' : 'Use another account';
+      const removeText = isRemoveMode ? (currentLang === 'vi' ? 'Xong' : 'Done') : (currentLang === 'vi' ? 'Xóa tài khoản' : 'Remove an account');
+
+      let accHtml = accounts.map((acc, idx) => `
+        <div class="account-item" onclick="onAccountClick('${acc.email}')">
+          <div style="display:flex; align-items:center;">
+            <div class="avatar" style="background:${acc.color};">${acc.letter || acc.name.charAt(0)}</div>
+            <div>
+              <div class="acc-name">${acc.name}</div>
+              <div class="acc-email">${acc.email}</div>
+            </div>
+          </div>
+          ${isRemoveMode ? `<button onclick="event.stopPropagation(); removeAcc('${acc.email}');" style="background:none; border:none; color:#f87171; cursor:pointer;">⛔</button>` : `<div class="signed-out">${signedOutText}</div>`}
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <div>
+          <div class="logo">
+            <svg width="40" height="40" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+            </svg>
+          </div>
+          <h1>${chooseText}</h1>
+          <div class="subtitle">${toContText}</div>
+          <div>${accHtml}</div>
+          <div class="action-item" onclick="renderIdentifier()">
+            <span style="font-size:18px;">👤</span>
+            <span>${useAnotherText}</span>
+          </div>
+          ${accounts.length > 0 ? `
+          <div class="action-item" onclick="toggleRemove()" style="color:${isRemoveMode ? '#f87171' : '#e3e3e3'}">
+            <span style="font-size:18px;">⛔</span>
+            <span>${removeText}</span>
+          </div>` : ''}
+        </div>
+      `;
+    }
+
+    function renderIdentifier() {
+      const container = document.getElementById('cardContainer');
+      const signInText = currentLang === 'vi' ? 'Đăng nhập' : 'Sign in';
+      const toContText = currentLang === 'vi' ? 'để tiếp tục đến Khách Sạn Bắc Hương' : 'to continue to Khách Sạn Bắc Hương';
+      const emailLabel = currentLang === 'vi' ? 'Email hoặc số điện thoại' : 'Email or phone';
+      const forgotEmail = currentLang === 'vi' ? 'Bạn quên địa chỉ email?' : 'Forgot email?';
+      const disclaimer = currentLang === 'vi' ? 'Đây không phải máy tính của bạn? Hãy sử dụng chế độ Khách để đăng nhập một cách riêng tư.' : 'Not your computer? Use Guest mode to sign in privately.';
+      const nextText = currentLang === 'vi' ? 'Tiếp theo' : 'Next';
+      const backText = currentLang === 'vi' ? '← Quay lại' : '← Back';
+
+      container.innerHTML = `
+        <div>
+          <div class="logo">
+            <svg width="40" height="40" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+            </svg>
+          </div>
+          <h1>${signInText}</h1>
+          <div class="subtitle">${toContText}</div>
+          <form onsubmit="handleIdentifierSubmit(event)">
+            <div class="input-box focused">
+              <span class="input-label">${emailLabel}</span>
+              <input type="text" id="emailInput" autofocus required>
+            </div>
+            <div style="margin-bottom:32px;">
+              <button type="button" class="blue-link">${forgotEmail}</button>
+            </div>
+            <div style="font-size:12px; color:#c4c7c5; line-height:1.5; margin-bottom:32px;">
+              ${disclaimer}
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <button type="button" class="blue-link" onclick="renderChooser()">${backText}</button>
+              <button type="submit" class="btn-next">${nextText}</button>
+            </div>
+          </form>
+        </div>
+      `;
+    }
+
+    function handleIdentifierSubmit(e) {
+      e.preventDefault();
+      const val = document.getElementById('emailInput').value.trim();
+      if (!val || !val.includes('@')) {
+        alert(currentLang === 'vi' ? 'Vui lòng nhập địa chỉ Gmail hợp lệ!' : 'Please enter a valid Gmail address!');
+        return;
+      }
+      let acc = accounts.find(a => a.email.toLowerCase() === val.toLowerCase());
+      if (!acc) {
+        const name = val.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        acc = { name: name, email: val, letter: name.charAt(0).toUpperCase() || 'U', color: '#1976d2' };
+        accounts.push(acc);
+        localStorage.setItem('google_accounts_list', JSON.stringify(accounts));
+      }
+      onAccountClick(acc.email);
+    }
+
+    function onAccountClick(email) {
+      if (isRemoveMode) return;
+      const acc = accounts.find(a => a.email === email);
+      if (!acc) return;
+
+      // Gửi message về cửa sổ cha (Opener)
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({
+          type: 'GOOGLE_AUTH_SUCCESS',
+          email: acc.email,
+          name: acc.name,
+          color: acc.color
+        }, window.location.origin);
+        window.close();
+      } else {
+        alert("Đăng nhập thành công với: " + acc.name + " (" + acc.email + ")");
+        window.close();
+      }
+    }
+
+    function toggleRemove() {
+      isRemoveMode = !isRemoveMode;
+      renderChooser();
+    }
+
+    function removeAcc(email) {
+      accounts = accounts.filter(a => a.email !== email);
+      localStorage.setItem('google_accounts_list', JSON.stringify(accounts));
+      if (accounts.length === 0) {
+        isRemoveMode = false;
+        renderIdentifier();
+      } else {
+        renderChooser();
+      }
+    }
+
+    function switchLang(val) {
+      currentLang = val;
+      renderChooser();
+    }
+
+    // Khởi chạy ban đầu
+    if (accounts.length > 0) {
+      renderChooser();
+    } else {
+      renderIdentifier();
+    }
+  </script>
+</body>
+</html>
