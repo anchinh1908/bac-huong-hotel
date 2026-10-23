@@ -1,117 +1,181 @@
-# BẮC HƯƠNG HOTEL - HỆ THỐNG QUẢN LÝ & ĐẶT PHÒNG KHÁCH SẠN TRỰC TUYẾN
+# 🏨 BẮC HƯƠNG HOTEL — REAL-TIME HOTEL MANAGEMENT & BOOKING SYSTEM
 
-> **Khách Sạn Bắc Hương** — Dự án Fullstack hoàn chỉnh quản lý lưu trú và đặt phòng khách sạn theo thời gian thực (Real-time Hotel Management System).
----
-
-## 🌟 TỔNG QUAN DỰ ÁN
-
-Hệ thống cung cấp giải pháp chuyển đổi số toàn diện cho mô hình khách sạn vừa và nhỏ:
-- **Cổng thông tin khách hàng (Client Portal):** Tra cứu phòng nghỉ, xem chi tiết tiện nghi, lọc phòng thông minh, đặt phòng trực tuyến, theo dõi trạng thái đơn và nhận email xác nhận tự động.
-- **Trung tâm điều hành Quản trị & Lễ tân (Admin & Staff Dashboard):** Theo dõi sơ đồ ma trận phòng trực quan bằng màu sắc, tiếp nhận và duyệt đơn đặt phòng với chuông báo tức thời, quản lý danh mục phòng (Thêm/Sửa/Xóa), phân quyền nhân viên và đổi mật khẩu an toàn.
+> **Bac Huong Hotel** is a full-stack, enterprise-grade web application engineered for modern hospitality management. It delivers an end-to-end digital experience for both hotel guests (online reservation portal) and hotel operators (real-time front-desk and administrative dashboards).
 
 ---
 
-## 🛠️ CÔNG NGHỆ SỬ DỤNG (TECH STACK)
+## 🌟 Overview & Key Capabilities
 
-| Thành phần | Công nghệ / Thư viện | Vai trò |
+This system provides a complete digital transformation solution tailored for boutique hotels and hospitality services:
+
+- **Customer Reservation Portal (Client Experience):**
+  - Explore room categories with high-resolution photo galleries and extended amenity lists.
+  - Smart filtering by capacity (1–4+ guests), bed type (Single, Queen, King, Family), price range, and real-time availability.
+  - Standardized booking form with automated stay duration & expected check-out calculation, Vietnamese phone validation, and automated email notifications.
+  - Personal booking tracking ledger where guests can monitor booking approvals, view cancellation notes, or self-cancel before arrival.
+  - Bookmark & favorites management stored locally without requiring immediate sign-in.
+
+- **Admin & Front-Desk Staff Command Center (Operations):**
+  - **Color-Coded Room Matrix:** Interactive visual board depicting room states:
+    - 🟢 **Available (Green):** Ready for new check-ins.
+    - 🔴 **Occupied (Red):** Guest in-house, displaying guest name and scheduled check-out date.
+    - 🟡 **Cleaning / Maintenance (Yellow):** Housekeeping in progress.
+  - **Instant Booking Chimes & Alerts:** Audio bell notification and floating popup triggered immediately when a guest submits a new reservation.
+  - **Reservation Lifecycle Management:** Review incoming bookings, one-click approval (locks room to Occupied and dispatches confirmation email) or rejection with a polite explanation note.
+  - **Room Catalog Management (CRUD):** Admin-only privilege to add, update pricing, upload images, and configure room specifications with smooth 10-item pagination.
+  - **Hotel Information & Branding Management:** Complete administrative control to update hotel contact info, hotline, Google Maps direct links, check-in/out policies, and add/edit/delete custom service policies.
+  - **Staff Management & Role-Based Access Control (RBAC):** Super Admin can provision front-desk staff accounts or designate administrative privileges.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies / Frameworks | Purpose & Implementation |
 | :--- | :--- | :--- |
-| **Backend** | **Java 17+ / Spring Boot 3** | Xây dựng RESTful API, xử lý nghiệp vụ, bảo mật xác thực |
-| **Database** | **MySQL 8.0** | Hệ quản trị cơ sở dữ liệu quan hệ lưu trữ phòng, đơn đặt phòng, tài khoản |
-| **ORM** | **Spring Data JPA / Hibernate** | Ánh xạ đối tượng Java với bảng CSDL MySQL |
-| **Email Service** | **Spring Mail (Gmail SMTP)** | Tự động gửi email xác nhận đặt phòng kèm mã đơn / lý do từ chối |
-| **Frontend** | **React 18 + Vite** | Giao diện người dùng Single Page Application (SPA) tốc độ cao |
-| **Giao diện & Icon**| **Vanilla CSS + Lucide React** | Thiết kế phong cách Luxury Amber ấm áp, tối ưu trên mọi màn hình |
-| **Xác thực** | **BCrypt + Google Identity OAuth2** | Đăng nhập tài khoản mật khẩu mã hóa hoặc qua Google |
+| **Backend** | **Java 21 / Spring Boot 3.4+** | Core RESTful API server, transaction handling, dependency injection |
+| **Database** | **MySQL 8.0** | Relational data persistence for rooms, bookings, hotel profile, and user credentials |
+| **ORM / Data Access** | **Spring Data JPA / Hibernate 6** | Declarative repositories, schema synchronization, query abstraction |
+| **Email Service** | **Spring Mail (Gmail SMTP)** | Automated transactional email notifications with booking codes and status updates |
+| **Frontend** | **React 18 + Vite** | High-performance Single Page Application (SPA) with fast HMR |
+| **Design & Icons** | **Vanilla CSS + Lucide React** | Warm Luxury Amber design system, responsive across desktop, tablet, and mobile |
+| **Authentication** | **BCrypt + Google Identity OAuth2** | Credential-based login, password hashing, and 1-click Google OAuth sign-in |
 
 ---
 
-## 🚀 TÍNH NĂNG NỔI BẬT
+## 🚀 Key Feature Breakdown
 
-### 1. Dành Cho Khách Hàng (Client Portal)
-- 🔎 **Bộ lọc phòng thông minh:** Lọc theo số lượng khách (1-4+ người), loại giường (đơn, đôi, family), khoảng giá linh hoạt và tùy chọn chỉ hiện phòng đang trống.
-- 📄 **Phân trang & Sắp xếp mới nhất:** Hiển thị 10 phòng/trang, tự động ưu tiên phòng mới lên đầu, tự động cuộn trang mượt mà khi chuyển trang.
-- 📝 **Đặt phòng chuẩn hóa:** Tích hợp kiểm tra định dạng Email và Số điện thoại Việt Nam (10 số, đầu 03, 05, 07, 08, 09), tính toán tổng tiền theo số đêm lưu trú.
-- 💖 **Phòng yêu thích:** Lưu lại các phòng ưng ý vào danh sách để đặt sau mà không cần đăng nhập lại.
-- 📋 **Sổ đơn cá nhân:** Khách có thể theo dõi tiến độ duyệt đơn, lý do từ chối (nếu có) và chủ động hủy đơn khi thay đổi lịch trình.
+### 1. Client Portal
+- 🔍 **Interactive Room Discovery:** View room specifications, multiple high-definition photos, bed configuration, square footage, and comprehensive amenity badges.
+- 📅 **Dynamic Stay Calculator:** Selecting the number of nights automatically calculates the expected check-out date based on local time and calculates total pricing.
+- 📨 **Instant Customer Confirmation:** Dispatches real-time transactional emails containing booking codes (`BH-XXXX`) upon submission and approval.
 
-### 2. Dành Cho Quản Trị Viên & Lễ Tân (Admin & Staff)
-- 🎨 **Sơ đồ ma trận màu sắc (Room Matrix):** 
-  - 🟢 **Xanh lá:** Phòng trống sẵn sàng đón khách.
-  - 🔴 **Đỏ:** Phòng đang có khách lưu trú (hiển thị tên khách).
-  - 🟡 **Vàng:** Phòng đang trong quá trình dọn dẹp / bảo trì.
-  - *Lễ tân có thể đổi trạng thái phòng chỉ bằng 1 cú click chuột.*
-- 🔔 **Chuông lễ tân & Cảnh báo tức thì:** Phát chuông âm thanh kèm popup thông báo nổi ngay khi có khách gửi yêu cầu đặt phòng mới từ xa.
-- 📑 **Sổ quản lý đơn đặt phòng:**
-  - Bộ lọc trạng thái nhanh: *Tất cả*, *Chờ duyệt*, *Đã xác nhận*, *Đã từ chối / Hủy*.
-  - Hiển thị ngày nhận phòng và ngày trả phòng chuẩn `DD/MM/YYYY`.
-  - Phân trang 10 đơn/trang, sắp xếp đơn mới nhất lên đầu.
-  - Nút **Duyệt đơn** (tự động chuyển phòng sang Có Khách và gửi email xác nhận) hoặc **Từ chối đơn** kèm hộp thoại nhập lý do gửi đến khách hàng.
-- 🏢 **Quản lý danh mục phòng (CRUD - Dành riêng Admin):** Thêm phòng mới, cập nhật giá, hình ảnh, tiện nghi, phân trang 10 phòng/trang.
-- 👥 **Quản lý nhân sự:** Admin tối cao có thể cấp tài khoản cho nhân viên lễ tân mới và quản lý danh sách nhân sự.
+### 2. Admin & Staff Operations
+- 🎨 **One-Click State Transitions:** Front-desk staff can instantly switch room statuses between Available, Occupied, and Cleaning directly on the interactive floor grid.
+- 🛎️ **Front-Desk Bell Notification:** Real-time polling detects incoming reservations and sounds an alert with a visual notification bubble.
+- 📊 **Comprehensive Booking Ledger:** Filter by pending, confirmed, and cancelled bookings. Paginated with 10 records per view and sorted by latest timestamp.
+- ⚙️ **Hotel Profile Control:** Modify hotel address, landline, mobile hotlines, email, official check-in (14:00) and check-out (12:00) times, and manage custom operational policies.
+- 👥 **Personnel Delegation:** Super Admin can safely register new staff credentials, review user roles, and revoke access when necessary.
 
 ---
 
-## 📁 CẤU TRÚC DỰ ÁN
+## 📁 Repository Structure
 
 ```bash
 bac-huong-hotel/
-├── backend/                             # Mã nguồn Backend Spring Boot 3
+├── backend/                             # Spring Boot 3 backend application
 │   ├── src/main/java/com/bachuong/hotel/
-│   │   ├── controller/                 # REST Controllers (HotelController, AuthController)
-│   │   ├── model/                      # JPA Entities (Room, Booking, Account)
+│   │   ├── controller/                 # REST APIs (HotelController, AuthController)
+│   │   ├── model/                      # JPA Entities (Room, Booking, Account, HotelInfo)
 │   │   ├── repository/                 # Spring Data JPA Repositories
-│   │   └── service/                    # EmailService gửi thư tự động
+│   │   └── service/                    # Automated EmailService implementation
 │   ├── src/main/resources/
-│   │   ├── application.properties.example # Cấu hình mẫu kết nối DB & Mail
-│   │   └── application.properties      # Cấu hình nội bộ (đã ignore)
-│   └── pom.xml                         # Quản lý thư viện Maven
+│   │   ├── application.properties.example # Sample database & mail configuration
+│   │   └── application.properties      # Active local properties (git-ignored)
+│   └── pom.xml                         # Maven build file and dependencies
 │
-├── frontend/                            # Mã nguồn Frontend React + Vite
+├── frontend/                            # React + Vite frontend application
 │   ├── src/
-│   │   ├── components/                 # Các component (AdminDashboard, BookingModal, ...)
-│   │   ├── data/bacHuongData.js        # Dữ liệu tĩnh dự phòng (Offline fallback)
-│   │   ├── App.jsx                     # Component gốc điều hướng toàn hệ thống
-│   │   └── main.jsx
-│   └── package.json
+│   │   ├── components/                 # UI components (AdminDashboard, RoomDetailModal, ...)
+│   │   ├── data/bacHuongData.js        # Fallback offline catalog
+│   │   ├── App.jsx                     # Core application orchestrator
+│   │   └── main.jsx                    # Application entry point
+│   ├── package.json                    # Node dependencies and scripts
+│   └── vite.config.js
 │
-├── database/                            # Kịch bản cơ sở dữ liệu
-│   └── schema.sql                      # Kịch bản khởi tạo bảng & dữ liệu mẫu
-├── run_backend.bat                      # Phím tắt chạy nhanh Backend
-├── run_frontend.bat                     # Phím tắt chạy nhanh Frontend
-├── .gitignore                           # Loại trừ node_modules, target, file mật
-└── README.md                            # Tài liệu dự án
+├── database/                            # Database setup and migrations
+│   └── schema.sql                      # Table schemas and initial seed data
+├── run_backend.bat                      # Windows shortcut to launch backend
+├── run_frontend.bat                     # Windows shortcut to launch frontend
+├── .gitignore                           # Ignored build outputs and sensitive files
+└── README.md                            # Project documentation
 ```
 
 ---
 
-## ⚡ HƯỚNG DẪN CÀI ĐẶT & CHẠY NHANH
+## ⚡ Installation & Quick Start
 
-### 1. Khởi tạo Cơ Sở Dữ Liệu MySQL
-1. Mở MySQL Workbench, phpMyAdmin hoặc dòng lệnh MySQL.
-2. Mở file [`database/schema.sql`](database/schema.sql) và thực thi (Execute) để tạo database `bachuong_hotel` cùng các bảng dữ liệu mẫu.
+### Prerequisites
+- **JDK 17 or Java 21**
+- **Node.js 18+ & npm**
+- **MySQL 8.0 Server** (running locally on port `3306` or `3309`)
 
-### 2. Cấu hình Backend
-1. Vào thư mục `backend/src/main/resources/`.
-2. Sao chép file `application.properties.example` thành `application.properties`.
-3. Cập nhật mật khẩu MySQL và mật khẩu ứng dụng Gmail của bạn:
-   ```properties
-   spring.datasource.username=root
-   spring.datasource.password=mat_khau_mysql_cua_ban
-   spring.mail.username=email_gui_cua_ban@gmail.com
-   spring.mail.password=mat_khau_ung_dung_gmail
+---
+
+### Step 1: Database Setup
+1. Open your MySQL client (MySQL Workbench, DBeaver, or CLI).
+2. Execute the setup script [`database/schema.sql`](database/schema.sql) to initialize the `bachuong_hotel` database, create tables, and populate seed data:
+   ```sql
+   source database/schema.sql;
    ```
 
-### 3. Chạy Ứng Dụng
-- **Khởi động Backend (Port 8080):**
-  Nhấp đúp vào file `run_backend.bat` hoặc mở terminal tại `backend/`:
-  ```bash
-  ./mvnw spring-boot:run
-  ```
-- **Khởi động Frontend (Port 3001 hoặc 5173):**
-  Nhấp đúp vào file `run_frontend.bat` hoặc mở terminal tại `frontend/`:
-  ```bash
-  npm install
-  npm run dev
-  ```
-- **Truy cập ứng dụng:** Mở trình duyệt web tại địa chỉ `http://localhost:3001`.
+---
 
+### Step 2: Backend Configuration & Startup
+1. Navigate to `backend/src/main/resources/`.
+2. Copy `application.properties.example` to `application.properties` if not already present.
+3. Verify your database connection credentials and mail settings:
+   ```properties
+   spring.datasource.url=jdbc:mysql://localhost:3309/bachuong_hotel?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+   spring.datasource.username=root
+   spring.datasource.password=your_mysql_password
+
+   # Gmail SMTP for transactional notifications
+   spring.mail.username=your_email@gmail.com
+   spring.mail.password=your_gmail_app_password
+   ```
+4. Start the Spring Boot backend server (Port `8080`):
+   ```bash
+   cd backend
+   ./mvnw spring-boot:run
+   ```
+   *(Or double-click `run_backend.bat` on Windows).*
+
+---
+
+### Step 3: Frontend Installation & Startup
+1. Open a new terminal and navigate to `frontend/`:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   *(Or double-click `run_frontend.bat` on Windows).*
+2. Open your web browser and navigate to:
+   ```
+   http://localhost:3001
+   ```
+
+---
+
+## 🔐 Default Access Credentials
+
+| Role | Username / Identifier | Password | Access Scope |
+| :--- | :--- | :--- | :--- |
+| **Supreme Admin** | `admin` | `admin123456` | Full system control: Room CRUD, Hotel Info, Staff Management, Bookings, Room Matrix |
+| **Front-Desk Staff** | `Hoai` | `123456` | Operations: Room Matrix, Booking approvals/rejections, Personal password change |
+| **Customer** | *(Self-register or Google Login)* | *(User set)* | Room browsing, booking submissions, booking history tracking |
+
+---
+
+## 📡 REST API Reference Summary
+
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/rooms` | Public | Retrieve all rooms with real-time status and metadata |
+| `POST` | `/api/rooms` | Admin | Create a new hotel room |
+| `PUT` | `/api/rooms/{id}` | Admin | Update room specifications, pricing, and images |
+| `DELETE` | `/api/rooms/{id}` | Admin | Delete a room from inventory |
+| `PUT` | `/api/rooms/{id}/status` | Staff/Admin | Update live room status (`AVAILABLE`, `OCCUPIED`, `CLEANING`) |
+| `GET` | `/api/bookings` | Staff/Admin | Retrieve all reservations sorted by newest |
+| `POST` | `/api/bookings` | Public | Submit a new customer booking request |
+| `PUT` | `/api/bookings/{id}/approve` | Staff/Admin | Confirm booking, assign guest to room, and send approval email |
+| `PUT` | `/api/bookings/{id}/reject` | Staff/Admin | Reject booking with explanation reason sent to customer |
+| `DELETE` | `/api/bookings/{id}` | Public/Staff | Cancel reservation and release assigned room |
+| `GET` | `/api/hotel-info` | Public | Fetch hotel information, contact details, and policies |
+| `PUT` | `/api/hotel-info` | Admin | Update hotel information and customized policies |
+| `POST` | `/api/hotel-info/reset` | Admin | Reset hotel profile to initial defaults |
+| `POST` | `/api/auth/login` | Public | Local authentication for Admin, Staff, or Customer |
+| `POST` | `/api/auth/google` | Public | 1-Click Google OAuth authentication |
+| `GET` | `/api/auth/staff` | Admin | Retrieve staff roster and account privileges |
+| `POST` | `/api/auth/staff` | Admin | Create new staff or administrative credentials |
+| `DELETE` | `/api/auth/staff/{id}` | Admin | Remove staff member access |

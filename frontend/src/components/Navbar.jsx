@@ -11,9 +11,11 @@ export default function Navbar({
   onOpenBookings,
   savedRoomsCount = 0,
   onOpenSavedRooms,
-  onGoToAdminDashboard
+  onGoToAdminDashboard,
+  hotelInfo
 }) {
   const isAdminOrStaff = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'STAFF');
+  const info = hotelInfo || HOTEL_INFO;
 
   return (
     <header className="navbar">
@@ -24,8 +26,8 @@ export default function Navbar({
             <Building size={24} />
           </div>
           <div>
-            <div className="brand-name-bh">{HOTEL_INFO.name}</div>
-            <div className="brand-sub">196 Trần Hưng Đạo • TP. Kon Tum</div>
+            <div className="brand-name-bh">{info.name}</div>
+            <div className="brand-sub">{info.address}</div>
           </div>
         </div>
 

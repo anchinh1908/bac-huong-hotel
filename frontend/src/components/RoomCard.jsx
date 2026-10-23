@@ -41,7 +41,7 @@ export default function RoomCard({ room, onBook, isSaved, onToggleSave, onViewDe
           {room.roomNumber} • {room.type}
         </span>
 
-        {/* Nút Xem ảnh nổi nhẹ khi hover */}
+        {/* Nút Xem chi tiết nổi nhẹ trên ảnh */}
         <div style={{
           position: 'absolute',
           top: '14px',
@@ -58,7 +58,7 @@ export default function RoomCard({ room, onBook, isSaved, onToggleSave, onViewDe
           backdropFilter: 'blur(4px)'
         }}>
           <Eye size={12} />
-          <span>Xem ảnh</span>
+          <span>Xem chi tiết</span>
         </div>
 
         {/* Nút Trái Tim (Yêu thích / Lưu phòng) */}
@@ -143,7 +143,7 @@ export default function RoomCard({ room, onBook, isSaved, onToggleSave, onViewDe
             <button
               type="button"
               onClick={() => onViewDetail && onViewDetail(room)}
-              title="Xem ảnh & tiện nghi chi tiết"
+              title="Xem chi tiết phòng & tiện nghi"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',

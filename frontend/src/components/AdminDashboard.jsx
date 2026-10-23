@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import AdminRoomGrid from './AdminRoomGrid';
 import AdminBookingsTable from './AdminBookingsTable';
+import AdminHotelInfo from './AdminHotelInfo';
 
 export default function AdminDashboard({ 
   adminUser, 
@@ -18,7 +19,10 @@ export default function AdminDashboard({
   onCancelBooking,
   isDbConnected,
   activeTab: controlledTab,
-  setActiveTab: controlledSetActiveTab
+  setActiveTab: controlledSetActiveTab,
+  hotelInfo,
+  onUpdateHotelInfo,
+  onResetHotelInfo
 }) {
   // Phân quyền: Chỉ ADMIN tối cao mới có quyền Thêm/Sửa/Xóa phòng và Quản lý nhân sự
   const isAdmin = adminUser && adminUser.role === 'ADMIN';
@@ -379,6 +383,29 @@ export default function AdminDashboard({
             >
               <Users size={17} />
               <span>Quản Lý Nhân Sự & Phân Quyền</span>
+            </button>
+          )}
+
+          {/* Tab quản lý thông tin khách sạn chỉ hiện cho Admin tối cao */}
+          {adminUser.role === 'ADMIN' && (
+            <button
+              onClick={() => setActiveTab('HOTEL_INFO')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 18px',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeTab === 'HOTEL_INFO' ? '#78350f' : 'transparent',
+                color: activeTab === 'HOTEL_INFO' ? 'white' : '#475569',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                cursor: 'pointer'
+              }}
+            >
+              <Building size={17} />
+              <span>Thông Tin Khách Sạn</span>
             </button>
           )}
 
@@ -770,6 +797,15 @@ export default function AdminDashboard({
               </form>
             </div>
           </div>
+        )}
+
+        {/* TAB 6: QUẢN LÝ TOÀN BỘ THÔNG TIN KHÁCH SẠN */}
+        {activeTab === 'HOTEL_INFO' && isAdmin && (
+          <AdminHotelInfo 
+            hotelInfo={hotelInfo}
+            onUpdateHotelInfo={onUpdateHotelInfo}
+            onResetHotelInfo={onResetHotelInfo}
+          />
         )}
       </div>
 

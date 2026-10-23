@@ -39,6 +39,9 @@ public class Room {
     @Column(name = "current_guest")
     private String currentGuest; // Tên khách đang ở (nếu trạng thái là OCCUPIED)
 
+    @Column(name = "check_out")
+    private String checkOut; // Ngày dự kiến trả phòng (ví dụ: 25/10/2026)
+
     public enum RoomStatus {
         AVAILABLE,  // Phòng trống
         OCCUPIED,   // Đang có khách

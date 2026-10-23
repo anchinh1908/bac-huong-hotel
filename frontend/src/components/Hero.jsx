@@ -2,21 +2,23 @@ import React from 'react';
 import { HOTEL_INFO } from '../data/bacHuongData';
 import { Sparkles, ArrowDown } from 'lucide-react';
 
-export default function Hero({ onExploreRooms }) {
+export default function Hero({ onExploreRooms, hotelInfo }) {
+  const info = hotelInfo || HOTEL_INFO;
+
   return (
     <section className="hero-bh">
       <div className="container">
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fef3c7', color: '#92400e', padding: '6px 16px', borderRadius: '50px', fontSize: '0.85rem', fontWeight: 700, marginBottom: '18px' }}>
           <Sparkles size={16} />
-          <span>Chào mừng quý khách đến với TP. Kon Tum</span>
+          <span>{info.tagline || 'Chào mừng quý khách đến với TP. Kon Tum'}</span>
         </div>
 
         <h1 className="hero-title-bh">
-          {HOTEL_INFO.name}
+          {info.name}
         </h1>
 
         <p className="hero-desc-bh">
-          {HOTEL_INFO.description}
+          {info.description}
         </p>
 
         <button 

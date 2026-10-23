@@ -2,7 +2,9 @@ import React from 'react';
 import { HOTEL_INFO } from '../data/bacHuongData';
 import { Building, MapPin, Phone, Mail, Navigation } from 'lucide-react';
 
-export default function Footer() {
+export default function Footer({ hotelInfo }) {
+  const info = hotelInfo || HOTEL_INFO;
+
   return (
     <footer className="footer-bh">
       <div className="container">
@@ -12,10 +14,10 @@ export default function Footer() {
               <div className="brand-icon-bh" style={{ width: '38px', height: '38px' }}>
                 <Building size={20} />
               </div>
-              <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'white' }}>{HOTEL_INFO.name}</span>
+              <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'white' }}>{info.name}</span>
             </div>
             <p style={{ color: '#a8a29e', fontSize: '0.92rem', lineHeight: '1.7', maxWidth: '450px' }}>
-              {HOTEL_INFO.description}
+              {info.description}
             </p>
           </div>
 
@@ -24,15 +26,15 @@ export default function Footer() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.88rem', color: '#d6d3d1' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <MapPin size={16} color="#f59e0b" style={{ flexShrink: 0 }} />
-                <span>{HOTEL_INFO.address}</span>
+                <span>{info.address}</span>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <Phone size={16} color="#f59e0b" />
-                <span>Hotline: {HOTEL_INFO.hotline}</span>
+                <span>Hotline: {info.hotline}</span>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <Mail size={16} color="#f59e0b" />
-                <span>{HOTEL_INFO.email}</span>
+                <span>{info.email}</span>
               </div>
             </div>
           </div>
@@ -42,20 +44,22 @@ export default function Footer() {
             <p style={{ color: '#a8a29e', fontSize: '0.88rem', marginBottom: '14px' }}>
               Khách sạn tọa lạc tại trung tâm TP. Kon Tum, rất gần Nhà Thờ Gỗ, Tòa Giám Mục và Cầu treo Kon Klor.
             </p>
-            <a 
-              href={HOTEL_INFO.googleMapsUrl} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="google-map-btn"
-            >
-              <Navigation size={14} />
-              <span>Xem trên Google Maps</span>
-            </a>
+            {info.googleMapsUrl && (
+              <a 
+                href={info.googleMapsUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="google-map-btn"
+              >
+                <Navigation size={14} />
+                <span>Xem trên Google Maps</span>
+              </a>
+            )}
           </div>
         </div>
 
         <div style={{ borderTop: '1px solid #292524', paddingTop: '20px', textAlign: 'center', fontSize: '0.82rem', color: '#78716c' }}>
-          © 2026 Khách Sạn Bắc Hương Kon Tum. Bản quyền thuộc về Khách Sạn Bắc Hương.
+          © 2026 {info.name}. Bản quyền thuộc về {info.name}.
         </div>
       </div>
     </footer>

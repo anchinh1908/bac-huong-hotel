@@ -84,10 +84,36 @@ export default function App() {
   const [dbErrorModal, setDbErrorModal] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
+  // 6. Quản lý toàn bộ thông tin khách sạn (Đồng bộ thời gian thực từ MySQL)
+  const [hotelInfo, setHotelInfo] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bh_hotel_info');
+      return saved ? JSON.parse(saved) : HOTEL_INFO;
+    } catch {
+      return HOTEL_INFO;
+    }
+  });
+
+  const fetchHotelInfo = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/hotel-info`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.name) {
+          setHotelInfo(data);
+          localStorage.setItem('bh_hotel_info', JSON.stringify(data));
+        }
+      }
+    } catch (e) {
+      // Offline fallback
+    }
+  };
+
   // Tải dữ liệu từ Backend Spring Boot & MySQL và kích hoạt polling thời gian thực
   useEffect(() => {
     checkDbConnection(false);
     fetchBookings();
+    fetchHotelInfo();
 
     // Polling tự động mỗi 4 giây để phát hiện ngay khi có khách vừa đặt phòng trực tuyến
     const timer = setInterval(() => {
@@ -286,10 +312,16 @@ export default function App() {
 
         // 2. Đổi trạng thái phòng sang OCCUPIED (Đỏ - Đã có khách)
         if (approved && approved.roomId) {
+          const formattedCheckOut = approved.checkOutDate 
+            ? (approved.checkOutDate.includes('-') 
+                ? approved.checkOutDate.split('-').reverse().join('/') 
+                : approved.checkOutDate)
+            : null;
           setRooms(prev => prev.map(r => r.id === approved.roomId ? {
             ...r,
             status: 'OCCUPIED',
-            currentGuest: approved.guestName
+            currentGuest: approved.guestName,
+            checkOut: formattedCheckOut
           } : r));
         }
 
@@ -362,20 +394,23 @@ export default function App() {
   };
 
   // Lễ tân/Admin cập nhật trạng thái phòng (Xanh <-> Đỏ <-> Vàng)
-  const handleUpdateRoomStatus = async (roomId, newStatus, guestName = '') => {
+  const handleUpdateRoomStatus = async (roomId, newStatus, guestName = '', checkOut = '') => {
     setRooms(rooms.map(room => {
       if (room.id === roomId) {
         return {
           ...room,
           status: newStatus,
-          currentGuest: newStatus === 'OCCUPIED' ? (guestName || room.currentGuest || 'Khách trực tiếp') : null
+          currentGuest: newStatus === 'OCCUPIED' ? (guestName || room.currentGuest || 'Khách trực tiếp') : null,
+          checkOut: newStatus === 'OCCUPIED' ? (checkOut || room.checkOut || null) : null
         };
       }
       return room;
     }));
 
     try {
-      const url = `${API_BASE}/rooms/${roomId}/status?status=${newStatus}${guestName ? `&guestName=${encodeURIComponent(guestName)}` : ''}`;
+      let url = `${API_BASE}/rooms/${roomId}/status?status=${newStatus}`;
+      if (guestName) url += `&guestName=${encodeURIComponent(guestName)}`;
+      if (checkOut) url += `&checkOut=${encodeURIComponent(checkOut)}`;
       await fetch(url, { method: 'PUT' });
     } catch (err) {
       console.log("Lỗi cập nhật phòng:", err);
@@ -398,7 +433,8 @@ export default function App() {
           return {
             ...room,
             status: 'AVAILABLE',
-            currentGuest: null
+            currentGuest: null,
+            checkOut: null
           };
         }
         return room;
@@ -436,6 +472,59 @@ export default function App() {
       localStorage.setItem('bh_saved_rooms', JSON.stringify(updated));
       return updated;
     });
+  };
+
+  // Quản trị viên cập nhật toàn bộ thông tin khách sạn
+  const handleUpdateHotelInfo = async (updatedInfo) => {
+    setHotelInfo(updatedInfo);
+    localStorage.setItem('bh_hotel_info', JSON.stringify(updatedInfo));
+
+    try {
+      const res = await fetch(`${API_BASE}/hotel-info`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedInfo)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.hotelInfo) {
+          setHotelInfo(data.hotelInfo);
+          localStorage.setItem('bh_hotel_info', JSON.stringify(data.hotelInfo));
+        }
+        setToastMessage({
+          type: 'success',
+          text: '✅ Đã lưu cập nhật thông tin khách sạn thành công vào hệ thống!'
+        });
+        setTimeout(() => setToastMessage(null), 5000);
+        return true;
+      }
+    } catch (err) {
+      console.error("Lỗi cập nhật hotel info:", err);
+    }
+    return false;
+  };
+
+  // Quản trị viên khôi phục thông tin khách sạn về mặc định
+  const handleResetHotelInfo = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/hotel-info/reset`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        const resetData = data.hotelInfo || HOTEL_INFO;
+        setHotelInfo(resetData);
+        localStorage.setItem('bh_hotel_info', JSON.stringify(resetData));
+        setToastMessage({
+          type: 'info',
+          text: '↺ Đã khôi phục toàn bộ thông tin khách sạn về mặc định ban đầu!'
+        });
+        setTimeout(() => setToastMessage(null), 5000);
+        return true;
+      }
+    } catch (err) {
+      setHotelInfo(HOTEL_INFO);
+      localStorage.setItem('bh_hotel_info', JSON.stringify(HOTEL_INFO));
+    }
+    return false;
   };
 
   // Danh sách đơn đặt phòng của khách hiện tại (Khớp email, SĐT hoặc Tên)
@@ -596,6 +685,9 @@ export default function App() {
             isDbConnected={isDbConnected}
             activeTab={adminActiveTab}
             setActiveTab={setAdminActiveTab}
+            hotelInfo={hotelInfo}
+            onUpdateHotelInfo={handleUpdateHotelInfo}
+            onResetHotelInfo={handleResetHotelInfo}
           />
         </div>
       ) : (
@@ -624,7 +716,7 @@ export default function App() {
           )}
 
           {/* 1. Thanh thông tin liên hệ & Google Maps */}
-          <HotelContactBar />
+          <HotelContactBar hotelInfo={hotelInfo} />
 
           {/* 2. Thanh Menu điều hướng */}
           <Navbar 
@@ -637,6 +729,7 @@ export default function App() {
             savedRoomsCount={savedRooms.length}
             onOpenSavedRooms={() => setIsSavedRoomsOpen(true)}
             onGoToAdminDashboard={() => setIsAdminMode(true)}
+            hotelInfo={hotelInfo}
           />
 
           {/* CÁCH 1: THANH CẢNH BÁO MẤT KẾT NỐI DATABASE ĐẦU TRANG */}
@@ -651,7 +744,10 @@ export default function App() {
           {/* 3. Nội dung trang chủ khách sạn */}
           <main style={{ flex: 1 }}>
             {/* Banner Khách sạn Bắc Hương Kon Tum */}
-            <Hero onExploreRooms={() => document.getElementById('rooms-list')?.scrollIntoView({ behavior: 'smooth' })} />
+            <Hero 
+              hotelInfo={hotelInfo}
+              onExploreRooms={() => document.getElementById('rooms-list')?.scrollIntoView({ behavior: 'smooth' })} 
+            />
 
             {/* Danh sách các phòng */}
             <div className="container" id="rooms-list" style={{ padding: '40px 20px 80px' }}>
@@ -823,7 +919,7 @@ export default function App() {
           </main>
 
           {/* 4. Chân trang Footer */}
-          <Footer />
+          <Footer hotelInfo={hotelInfo} />
 
           {/* 5. Modal Đặt phòng cho khách (Yêu cầu đăng nhập trước khi đặt) */}
           <BookingModal 
@@ -845,6 +941,7 @@ export default function App() {
             }}
             isSaved={detailRoom ? savedRooms.some(r => r.id === detailRoom.id) : false}
             onToggleSave={handleToggleSaveRoom}
+            hotelInfo={hotelInfo}
           />
 
           {/* 6. Modal Xem phòng đã đặt của khách */}

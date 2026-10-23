@@ -1,8 +1,10 @@
 package com.bachuong.hotel.controller;
 
 import com.bachuong.hotel.model.Booking;
+import com.bachuong.hotel.model.HotelInfo;
 import com.bachuong.hotel.model.Room;
 import com.bachuong.hotel.repository.BookingRepository;
+import com.bachuong.hotel.repository.HotelInfoRepository;
 import com.bachuong.hotel.repository.RoomRepository;
 import com.bachuong.hotel.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,19 +29,128 @@ public class HotelController {
     private BookingRepository bookingRepository;
 
     @Autowired
+    private HotelInfoRepository hotelInfoRepository;
+
+    @Autowired
     private EmailService emailService;
 
-    // 1. API: Lấy thông tin khách sạn Bắc Hương
+    @Autowired(required = false)
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @jakarta.annotation.PostConstruct
+    public void initHotelTable() {
+        if (jdbcTemplate != null) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE hotel_info MODIFY COLUMN google_maps_url TEXT NULL");
+                jdbcTemplate.execute("ALTER TABLE hotel_info MODIFY COLUMN email VARCHAR(255) NULL");
+                jdbcTemplate.execute("ALTER TABLE hotel_info MODIFY COLUMN hotline VARCHAR(255) NULL");
+                jdbcTemplate.execute("ALTER TABLE hotel_info MODIFY COLUMN address VARCHAR(255) NULL");
+                jdbcTemplate.execute("ALTER TABLE hotel_info MODIFY COLUMN name VARCHAR(255) NULL");
+            } catch (Exception e) {
+                // Ignore if already modified
+            }
+        }
+    }
+
+    private HotelInfo getDefaultHotelInfo() {
+        HotelInfo info = new HotelInfo();
+        info.setId(1L);
+        info.setName("Khách Sạn Bắc Hương");
+        info.setTagline("Điểm Dừng Chân Lý Tưởng Giữa Lòng Cao Nguyên Kon Tum");
+        info.setAddress("196 Trần Hưng Đạo, Phường Quyết Thắng, TP. Kon Tum, Tỉnh Kon Tum");
+        info.setHotline("0935.911.889 - 0828.211.222");
+        info.setLandline("0260.3862.666");
+        info.setEmail("khachsanbachuong.kontum@gmail.com");
+        info.setAdminEmail("admin.bachuong@gmail.com");
+        info.setGoogleMapsUrl("https://www.google.com/maps/place/Kh%C3%A1ch+S%E1%BA%A1n+B%E1%BA%AFc+H%C6%B0%C6%A1ng/@14.3602403,108.0124471,15z/data=!4m9!3m8!1s0x316bffa204140589:0xcc7e4d82c2632ce!5m2!4m1!1i2!8m2!3d14.3499989!4d108.0069535!16s%2Fg%2F1hc2bzk7m!5m1!1e1?entry=ttu&g_ep=EgoyMDI2MTAxNC4wIKXMDSoASAFQAw%3D%3D");
+        info.setOpenTime("Lễ tân phục vụ 24/7");
+        info.setCheckInTime("14:00");
+        info.setCheckOutTime("12:00");
+        info.setDescription("Khách sạn Bắc Hương tọa lạc tại số 196 Trần Hưng Đạo, vị trí trung tâm sầm uất bậc nhất thành phố Kon Tum. Rất thuận tiện để quý khách di chuyển tham quan Nhà Thờ Gỗ Kon Tum, Tòa Giám Mục, Cầu treo Kon Klor và dòng sông Đăk Bla huyền thoại.");
+        info.setHeroImage("https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80");
+        info.setCustomPolicies("[{\"id\":\"p1\",\"title\":\"Chính sách nhận & trả phòng\",\"content\":\"Nhận phòng từ 14:00 và trả phòng trước 12:00 trưa. Khách nhận sớm hoặc trả trễ vui lòng thông báo trước với Lễ tân.\"},{\"id\":\"p2\",\"title\":\"Hỗ trợ phương tiện & đưa đón\",\"content\":\"Có bãi đậu xe ô tô và xe máy rộng rãi có mái che, bảo vệ 24/24. Khách sạn hỗ trợ đặt xe đưa đón sân bay Pleiku.\"},{\"id\":\"p3\",\"title\":\"Dịch vụ dọn phòng & giặt ủi\",\"content\":\"Dọn phòng sạch sẽ mỗi ngày. Có dịch vụ giặt ủi lấy nhanh theo yêu cầu của quý khách.\"}]");
+        return info;
+    }
+
+    // 1. API: Lấy thông tin khách sạn Bắc Hương từ MySQL
     @GetMapping("/hotel-info")
     public ResponseEntity<?> getHotelInfo() {
-        Map<String, Object> info = new HashMap<>();
-        info.put("name", "Khách Sạn Bắc Hương");
-        info.put("address", "196 Trần Hưng Đạo, Phường Quyết Thắng, TP. Kon Tum, Tỉnh Kon Tum");
-        info.put("hotline", "0935.911.889 - 0828.211.222");
-        info.put("landline", "0260.3862.666");
-        info.put("email", "khachsanbachuong.kontum@gmail.com");
-        info.put("googleMapsUrl", "https://www.google.com/maps/place/Kh%C3%A1ch+S%E1%BA%A1n+B%E1%BA%AFc+H%C6%B0%C6%A1ng/@14.3602403,108.0124471,15z/data=!4m9!3m8!1s0x316bffa204140589:0xcc7e4d82c2632ce!5m2!4m1!1i2!8m2!3d14.3499989!4d108.0069535!16s%2Fg%2F1hc2bzk7m!5m1!1e1?entry=ttu&g_ep=EgoyMDI2MTAxNC4wIKXMDSoASAFQAw%3D%3D");
-        return ResponseEntity.ok(info);
+        Optional<HotelInfo> opt = hotelInfoRepository.findById(1L);
+        if (opt.isPresent()) {
+            return ResponseEntity.ok(opt.get());
+        }
+        HotelInfo defaultInfo = getDefaultHotelInfo();
+        return ResponseEntity.ok(hotelInfoRepository.save(defaultInfo));
+    }
+
+    // 1.1. API (Admin): Cập nhật thông tin khách sạn (Tên, địa chỉ, sđt, giờ giấc, chính sách...)
+    @PutMapping("/hotel-info")
+    public ResponseEntity<?> updateHotelInfo(@RequestBody HotelInfo updated) {
+        HotelInfo existing = hotelInfoRepository.findById(1L).orElseGet(this::getDefaultHotelInfo);
+        
+        if (updated.getName() != null && !updated.getName().trim().isEmpty()) {
+            existing.setName(updated.getName().trim());
+        }
+        if (updated.getTagline() != null) {
+            existing.setTagline(updated.getTagline().trim());
+        }
+        if (updated.getAddress() != null && !updated.getAddress().trim().isEmpty()) {
+            existing.setAddress(updated.getAddress().trim());
+        }
+        if (updated.getHotline() != null && !updated.getHotline().trim().isEmpty()) {
+            existing.setHotline(updated.getHotline().trim());
+        }
+        if (updated.getLandline() != null) {
+            existing.setLandline(updated.getLandline().trim());
+        }
+        if (updated.getEmail() != null && !updated.getEmail().trim().isEmpty()) {
+            existing.setEmail(updated.getEmail().trim());
+        }
+        if (updated.getAdminEmail() != null) {
+            existing.setAdminEmail(updated.getAdminEmail().trim());
+        }
+        if (updated.getGoogleMapsUrl() != null && !updated.getGoogleMapsUrl().trim().isEmpty()) {
+            existing.setGoogleMapsUrl(updated.getGoogleMapsUrl().trim());
+        } else if (existing.getGoogleMapsUrl() == null) {
+            existing.setGoogleMapsUrl("");
+        }
+        if (updated.getOpenTime() != null) {
+            existing.setOpenTime(updated.getOpenTime().trim());
+        }
+        if (updated.getCheckInTime() != null) {
+            existing.setCheckInTime(updated.getCheckInTime().trim());
+        }
+        if (updated.getCheckOutTime() != null) {
+            existing.setCheckOutTime(updated.getCheckOutTime().trim());
+        }
+        if (updated.getDescription() != null) {
+            existing.setDescription(updated.getDescription().trim());
+        }
+        if (updated.getHeroImage() != null) {
+            existing.setHeroImage(updated.getHeroImage().trim());
+        }
+        if (updated.getCustomPolicies() != null) {
+            existing.setCustomPolicies(updated.getCustomPolicies().trim());
+        }
+
+        HotelInfo saved = hotelInfoRepository.save(existing);
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("success", true);
+        resp.put("message", "Đã cập nhật thông tin khách sạn thành công!");
+        resp.put("hotelInfo", saved);
+        return ResponseEntity.ok(resp);
+    }
+
+    // 1.2. API (Admin): Khôi phục thông tin khách sạn về mặc định ban đầu
+    @PostMapping("/hotel-info/reset")
+    public ResponseEntity<?> resetHotelInfo() {
+        HotelInfo defaultInfo = getDefaultHotelInfo();
+        HotelInfo saved = hotelInfoRepository.save(defaultInfo);
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("success", true);
+        resp.put("message", "Đã khôi phục thông tin khách sạn về mặc định thành công!");
+        resp.put("hotelInfo", saved);
+        return ResponseEntity.ok(resp);
     }
 
     // 2. API: Lấy danh sách toàn bộ phòng (kèm trạng thái Xanh/Đỏ/Vàng)
@@ -77,6 +188,8 @@ public class HotelController {
         if (updated.getImage() != null) room.setImage(updated.getImage());
         if (updated.getFloor() != null) room.setFloor(updated.getFloor());
         if (updated.getStatus() != null) room.setStatus(updated.getStatus());
+        if (updated.getCurrentGuest() != null) room.setCurrentGuest(updated.getCurrentGuest());
+        if (updated.getCheckOut() != null) room.setCheckOut(updated.getCheckOut());
         
         Room saved = roomRepository.save(room);
         return ResponseEntity.ok(saved);
@@ -97,7 +210,8 @@ public class HotelController {
     public ResponseEntity<?> updateRoomStatus(
             @PathVariable Long id,
             @RequestParam Room.RoomStatus status,
-            @RequestParam(required = false) String guestName) {
+            @RequestParam(required = false) String guestName,
+            @RequestParam(required = false) String checkOut) {
         
         Optional<Room> roomOpt = roomRepository.findById(id);
         if (roomOpt.isEmpty()) {
@@ -106,10 +220,17 @@ public class HotelController {
 
         Room room = roomOpt.get();
         room.setStatus(status);
-        if (status == Room.RoomStatus.OCCUPIED && guestName != null) {
-            room.setCurrentGuest(guestName);
-        } else if (status == Room.RoomStatus.AVAILABLE) {
+        if (status == Room.RoomStatus.OCCUPIED) {
+            if (guestName != null && !guestName.trim().isEmpty()) {
+                room.setCurrentGuest(guestName.trim());
+            }
+            if (checkOut != null && !checkOut.trim().isEmpty()) {
+                room.setCheckOut(checkOut.trim());
+            }
+        } else {
+            // Khi phòng chuyển sang AVAILABLE hoặc CLEANING (trả phòng hoặc dọn dẹp)
             room.setCurrentGuest(null);
+            room.setCheckOut(null);
         }
 
         roomRepository.save(room);
@@ -184,11 +305,15 @@ public class HotelController {
         booking.setStatus(Booking.BookingStatus.CONFIRMED);
         Booking savedBooking = bookingRepository.save(booking);
 
-        // 1. Chuyển trạng thái phòng sang OCCUPIED (Đỏ - Đã có khách)
+        // 1. Chuyển trạng thái phòng sang OCCUPIED (Đỏ - Đã có khách) và gán ngày dự kiến trả phòng
         if (booking.getRoomId() != null) {
             roomRepository.findById(booking.getRoomId()).ifPresent(room -> {
                 room.setStatus(Room.RoomStatus.OCCUPIED);
                 room.setCurrentGuest(booking.getGuestName());
+                if (booking.getCheckOutDate() != null) {
+                    java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    room.setCheckOut(booking.getCheckOutDate().format(dtf));
+                }
                 roomRepository.save(room);
             });
         }
@@ -233,6 +358,7 @@ public class HotelController {
                 if (room.getStatus() != Room.RoomStatus.OCCUPIED) {
                     room.setStatus(Room.RoomStatus.AVAILABLE);
                     room.setCurrentGuest(null);
+                    room.setCheckOut(null);
                     roomRepository.save(room);
                 }
             });
@@ -268,6 +394,7 @@ public class HotelController {
             roomRepository.findById(booking.getRoomId()).ifPresent(room -> {
                 room.setStatus(Room.RoomStatus.AVAILABLE);
                 room.setCurrentGuest(null);
+                room.setCheckOut(null);
                 roomRepository.save(room);
             });
         }

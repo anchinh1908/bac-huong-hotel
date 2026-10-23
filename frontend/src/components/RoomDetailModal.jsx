@@ -12,7 +12,8 @@ export default function RoomDetailModal({
   onClose, 
   onBook, 
   isSaved, 
-  onToggleSave 
+  onToggleSave,
+  hotelInfo
 }) {
   const [activeImgIdx, setActiveImgIdx] = useState(0);
 
@@ -407,13 +408,13 @@ export default function RoomDetailModal({
           }}>
             <div style={{ fontWeight: 800, fontSize: '0.92rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Coffee size={17} />
-              <span>Chính sách nhận / trả phòng & Dịch vụ tại Khách Sạn Bắc Hương:</span>
+              <span>Chính sách nhận / trả phòng & Dịch vụ tại {hotelInfo?.name || 'Khách Sạn Bắc Hương'}:</span>
             </div>
             <ul style={{ margin: 0, paddingLeft: '20px' }}>
-              <li><b>Giờ nhận phòng:</b> từ 14:00 • <b>Giờ trả phòng:</b> trước 12:00 trưa hôm sau.</li>
+              <li><b>Giờ nhận phòng:</b> từ {hotelInfo?.checkInTime || '14:00'} • <b>Giờ trả phòng:</b> trước {hotelInfo?.checkOutTime || '12:00'} trưa hôm sau.</li>
               <li>Hỗ trợ nhận phòng sớm nếu khách sạn còn phòng trống sẵn sàng.</li>
               <li>Miễn phí 02 chai nước suối, trà và cà phê đặt tại phòng mỗi ngày.</li>
-              <li>Bộ phận Lễ tân phục vụ 24/7 trực tiếp tại sảnh hoặc qua hotline: <b>0935.911.889</b>.</li>
+              <li>Bộ phận Lễ tân phục vụ 24/7 trực tiếp tại sảnh hoặc qua hotline: <b>{hotelInfo?.hotline || '0935.911.889'}</b>.</li>
             </ul>
           </div>
         </div>
