@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Shield, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
 
+import { setAuthToken } from '../utils/api';
+
 export default function AdminLoginModal({ isOpen, onClose, onAdminLoginSuccess }) {
   if (!isOpen) return null;
 
@@ -23,7 +25,10 @@ export default function AdminLoginModal({ isOpen, onClose, onAdminLoginSuccess }
       const data = await res.json();
       if (res.ok && data.account) {
         if (data.account.role === 'ADMIN' || data.account.role === 'STAFF') {
-          onAdminLoginSuccess(data.account);
+          if (data.token) {
+            setAuthToken(data.token);
+          }
+          onAdminLoginSuccess(data.account, data.token);
           onClose();
         } else {
           setError('Tài khoản này là Khách hàng, không có quyền truy cập trang Quản lý!');

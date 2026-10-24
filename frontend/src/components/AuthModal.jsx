@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Mail, Lock, User, Phone, KeyRound, ShieldCheck, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import GoogleAccountChooserModal from './GoogleAccountChooserModal';
+import { setAuthToken } from '../utils/api';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   if (!isOpen) return null;
@@ -119,7 +120,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
       });
       const data = await res.json();
       if (res.ok && data.account) {
-        onLoginSuccess(data.account);
+        if (data.token) setAuthToken(data.token);
+        onLoginSuccess(data.account, data.token);
         onClose();
       } else {
         setMessage({ type: 'error', text: data.message || 'Đăng nhập Google không thành công!' });
@@ -145,7 +147,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
       });
       const data = await res.json();
       if (res.ok && data.account) {
-        onLoginSuccess(data.account);
+        if (data.token) setAuthToken(data.token);
+        onLoginSuccess(data.account, data.token);
         onClose();
       } else {
         setMessage({ type: 'error', text: data.message || 'Sai tài khoản hoặc mật khẩu!' });
@@ -193,7 +196,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
       });
       const data = await res.json();
       if (res.ok && data.account) {
-        onLoginSuccess(data.account);
+        if (data.token) setAuthToken(data.token);
+        onLoginSuccess(data.account, data.token);
         onClose();
       } else {
         setMessage({ type: 'error', text: data.message || 'Đăng ký thất bại!' });

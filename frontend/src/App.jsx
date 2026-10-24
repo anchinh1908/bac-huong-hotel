@@ -16,6 +16,7 @@ import NewBookingAlertModal from './components/NewBookingAlertModal';
 import RoomDetailModal from './components/RoomDetailModal';
 import { HOTEL_INFO, INITIAL_ROOMS, INITIAL_BOOKINGS } from './data/bacHuongData';
 import { Calendar, CheckCircle2, Clock, X, Shield, ArrowRight, Heart, Trash2, AlertTriangle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { authFetch, clearAuthToken } from './utils/api';
 
 const API_BASE = 'http://localhost:8080/api';
 
@@ -176,7 +177,7 @@ export default function App() {
 
   const fetchBookings = async () => {
     try {
-      const res = await fetch(`${API_BASE}/bookings`);
+      const res = await authFetch(`${API_BASE}/bookings`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.length > 0) {
@@ -197,7 +198,7 @@ export default function App() {
         }
       }
     } catch {
-      // Backend offline thì dùng INITIAL_BOOKINGS
+      // Backend offline hoặc không có quyền lễ tân
     }
   };
 
@@ -217,6 +218,7 @@ export default function App() {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('bh_user');
+    clearAuthToken();
     setIsAdminMode(false);
   };
 
@@ -300,7 +302,7 @@ export default function App() {
   // Quản trị viên / Lễ tân BẤM DUYỆT ĐƠN ĐẶT PHÒNG: Khóa phòng sang ĐỎ (OCCUPIED) & Bắn Email xác nhận cho Khách
   const handleApproveBooking = async (bookingId) => {
     try {
-      const res = await fetch(`${API_BASE}/bookings/${bookingId}/approve`, {
+      const res = await authFetch(`${API_BASE}/bookings/${bookingId}/approve`, {
         method: 'PUT'
       });
       if (res.ok) {
@@ -350,7 +352,7 @@ export default function App() {
   // Quản trị viên / Lễ tân TỪ CHỐI ĐƠN: Đơn sang REJECTED, Phòng giữ AVAILABLE (Xanh), Gửi Email cáo lỗi & lý do cho Khách
   const handleRejectBooking = async (bookingId, reason = 'Khách sạn hiện kín phòng hoặc đang bảo trì vào khung giờ này.') => {
     try {
-      const res = await fetch(`${API_BASE}/bookings/${bookingId}/reject`, {
+      const res = await authFetch(`${API_BASE}/bookings/${bookingId}/reject`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason })
@@ -411,7 +413,7 @@ export default function App() {
       let url = `${API_BASE}/rooms/${roomId}/status?status=${newStatus}`;
       if (guestName) url += `&guestName=${encodeURIComponent(guestName)}`;
       if (checkOut) url += `&checkOut=${encodeURIComponent(checkOut)}`;
-      await fetch(url, { method: 'PUT' });
+      await authFetch(url, { method: 'PUT' });
     } catch (err) {
       console.log("Lỗi cập nhật phòng:", err);
     }
@@ -443,7 +445,7 @@ export default function App() {
 
     // 4. Gửi yêu cầu DELETE lên Backend Spring Boot & MySQL
     try {
-      await fetch(`${API_BASE}/bookings/${bookingId}`, { method: 'DELETE' });
+      await authFetch(`${API_BASE}/bookings/${bookingId}`, { method: 'DELETE' });
       fetchRooms();
       fetchBookings();
     } catch (err) {
@@ -480,7 +482,7 @@ export default function App() {
     localStorage.setItem('bh_hotel_info', JSON.stringify(updatedInfo));
 
     try {
-      const res = await fetch(`${API_BASE}/hotel-info`, {
+      const res = await authFetch(`${API_BASE}/hotel-info`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedInfo)
@@ -507,7 +509,7 @@ export default function App() {
   // Quản trị viên khôi phục thông tin khách sạn về mặc định
   const handleResetHotelInfo = async () => {
     try {
-      const res = await fetch(`${API_BASE}/hotel-info/reset`, { method: 'POST' });
+      const res = await authFetch(`${API_BASE}/hotel-info/reset`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         const resetData = data.hotelInfo || HOTEL_INFO;

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, KeyRound, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { authFetch } from '../utils/api';
 
 export default function CustomerChangePasswordModal({ isOpen, onClose, currentUser }) {
   if (!isOpen || !currentUser) return null;
@@ -27,7 +28,7 @@ export default function CustomerChangePasswordModal({ isOpen, onClose, currentUs
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:8080/api/auth/change-password', {
+      const res = await authFetch('http://localhost:8080/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

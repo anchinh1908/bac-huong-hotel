@@ -6,6 +6,7 @@ import {
 import AdminRoomGrid from './AdminRoomGrid';
 import AdminBookingsTable from './AdminBookingsTable';
 import AdminHotelInfo from './AdminHotelInfo';
+import { authFetch } from '../utils/api';
 
 export default function AdminDashboard({ 
   adminUser, 
@@ -79,7 +80,7 @@ export default function AdminDashboard({
 
   const fetchStaff = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/auth/staff');
+      const res = await authFetch('http://localhost:8080/api/auth/staff');
       if (res.ok) {
         const data = await res.json();
         setStaffList(data);
@@ -93,7 +94,7 @@ export default function AdminDashboard({
   const handleCreateStaff = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8080/api/auth/staff', {
+      const res = await authFetch('http://localhost:8080/api/auth/staff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newStaff)
@@ -113,7 +114,7 @@ export default function AdminDashboard({
   const handleDeleteStaff = async (id, username) => {
     if (window.confirm(`Bạn có chắc muốn xóa tài khoản nhân sự: ${username}?`)) {
       try {
-        const res = await fetch(`http://localhost:8080/api/auth/staff/${id}`, { method: 'DELETE' });
+        const res = await authFetch(`http://localhost:8080/api/auth/staff/${id}`, { method: 'DELETE' });
         if (res.ok) {
           fetchStaff();
         }
@@ -173,14 +174,14 @@ export default function AdminDashboard({
     try {
       if (editingRoom) {
         // Cập nhật
-        await fetch(`http://localhost:8080/api/rooms/${editingRoom.id}`, {
+        await authFetch(`http://localhost:8080/api/rooms/${editingRoom.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       } else {
         // Tạo mới
-        await fetch('http://localhost:8080/api/rooms', {
+        await authFetch('http://localhost:8080/api/rooms', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -198,7 +199,7 @@ export default function AdminDashboard({
     if (!isAdmin) return;
     if (window.confirm(`⚠️ Bạn có chắc chắn muốn XÓA phòng ${roomNumber} khỏi cơ sở dữ liệu khách sạn?`)) {
       try {
-        await fetch(`http://localhost:8080/api/rooms/${id}`, { method: 'DELETE' });
+        await authFetch(`http://localhost:8080/api/rooms/${id}`, { method: 'DELETE' });
         onRefreshRooms();
       } catch {
         // Fallback
@@ -216,7 +217,7 @@ export default function AdminDashboard({
     setPwdMsg({ type: '', text: '' });
 
     try {
-      const res = await fetch('http://localhost:8080/api/auth/change-password', {
+      const res = await authFetch('http://localhost:8080/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

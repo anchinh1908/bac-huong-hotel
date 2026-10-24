@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import com.bachuong.hotel.security.JwtTokenProvider;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
@@ -22,7 +25,13 @@ public class AuthController {
     @Autowired
     private EmailService emailService;
 
-    // 1. Đăng nhập truyền thống (Username hoặc Email + Password)
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    // 1. Đăng nhập truyền thống (Username hoặc Email + Password) -> Trả về JWT Token
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
         String identifier = body.get("username"); // Có thể là username hoặc email
@@ -42,18 +51,31 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Tài khoản của bạn đã bị tạm khóa!"));
         }
 
-        if (!password.equals(account.getPassword())) {
+        // Hỗ trợ cả mật khẩu mã hóa BCrypt và mật khẩu gốc trước đó để không bị mất tài khoản cũ
+        boolean matches = (account.getPassword() != null && passwordEncoder.matches(password, account.getPassword()))
+                || password.equals(account.getPassword());
+
+        if (!matches) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Mật khẩu không chính xác!"));
         }
+
+        // Sinh JWT Token chứa thông tin xác thực
+        String token = jwtTokenProvider.generateToken(
+                account.getUsername() != null ? account.getUsername() : account.getEmail(),
+                account.getRole().name(),
+                account.getId(),
+                account.getFullName()
+        );
 
         Map<String, Object> res = new HashMap<>();
         res.put("success", true);
         res.put("message", "Đăng nhập thành công!");
+        res.put("token", token);
         res.put("account", sanitizeAccount(account));
         return ResponseEntity.ok(res);
     }
 
-    // 2. Đăng nhập nhanh bằng Google (1-Click Google Login cho Khách hàng)
+    // 2. Đăng nhập nhanh bằng Google (1-Click Google Login) -> Trả về JWT Token
     @PostMapping("/google")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body) {
         String email = body.get("email");
@@ -79,9 +101,17 @@ public class AuthController {
         if (avatar != null) account.setAvatarUrl(avatar);
         accountRepository.save(account);
 
+        String token = jwtTokenProvider.generateToken(
+                account.getEmail(),
+                account.getRole().name(),
+                account.getId(),
+                account.getFullName()
+        );
+
         Map<String, Object> res = new HashMap<>();
         res.put("success", true);
         res.put("message", "Đăng nhập Google thành công!");
+        res.put("token", token);
         res.put("account", sanitizeAccount(account));
         return ResponseEntity.ok(res);
     }
@@ -118,18 +148,26 @@ public class AuthController {
 
         Account newAcc = new Account();
         newAcc.setEmail(emailClean);
-        newAcc.setPassword(password);
+        newAcc.setPassword(passwordEncoder.encode(password));
         newAcc.setFullName(fullName);
         newAcc.setPhone(phoneClean);
         newAcc.setRole(Account.Role.CUSTOMER);
         newAcc.setProvider("LOCAL");
         accountRepository.save(newAcc);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "success", true,
-                "message", "Đăng ký tài khoản thành công!",
-                "account", sanitizeAccount(newAcc)
-        ));
+        String token = jwtTokenProvider.generateToken(
+                newAcc.getEmail(),
+                newAcc.getRole().name(),
+                newAcc.getId(),
+                newAcc.getFullName()
+        );
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("success", true);
+        resp.put("message", "Đăng ký tài khoản thành công!");
+        resp.put("token", token);
+        resp.put("account", sanitizeAccount(newAcc));
+        return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
 
     // 4. Đổi mật khẩu (Dành cho Admin, Quản lý hoặc Khách hàng)
@@ -145,12 +183,14 @@ public class AuthController {
         }
 
         Account account = accOpt.get();
-        // Kiểm tra mật khẩu cũ (nếu có mật khẩu cũ)
-        if (account.getPassword() != null && !account.getPassword().equals(oldPassword)) {
+        // Kiểm tra mật khẩu cũ (hỗ trợ cả BCrypt và mật khẩu thuần cũ)
+        boolean matches = (account.getPassword() != null && passwordEncoder.matches(oldPassword, account.getPassword()))
+                || oldPassword.equals(account.getPassword());
+        if (!matches) {
             return ResponseEntity.badRequest().body(Map.of("message", "Mật khẩu hiện tại không đúng!"));
         }
 
-        account.setPassword(newPassword);
+        account.setPassword(passwordEncoder.encode(newPassword));
         accountRepository.save(account);
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Đổi mật khẩu thành công!"));
@@ -202,7 +242,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "Mã OTP đã hết hạn!"));
         }
 
-        account.setPassword(newPassword);
+        account.setPassword(passwordEncoder.encode(newPassword));
         account.setResetOtp(null);
         account.setOtpExpiry(null);
         accountRepository.save(account);
@@ -245,7 +285,7 @@ public class AuthController {
         Account staff = new Account();
         staff.setUsername(username);
         staff.setEmail(email);
-        staff.setPassword(password);
+        staff.setPassword(passwordEncoder.encode(password));
         staff.setFullName(fullName);
         staff.setPhone(phone);
         staff.setRole("ADMIN".equalsIgnoreCase(roleStr) ? Account.Role.ADMIN : Account.Role.STAFF);

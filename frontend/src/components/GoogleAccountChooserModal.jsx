@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, MinusCircle, Trash2, ChevronDown, X, Eye, EyeOff, Globe, ExternalLink } from 'lucide-react';
+import { setAuthToken } from '../utils/api';
 
 export default function GoogleAccountChooserModal({ isOpen, onClose, onLoginSuccess }) {
   if (!isOpen) return null;
@@ -153,6 +154,9 @@ export default function GoogleAccountChooserModal({ isOpen, onClose, onLoginSucc
       });
       const data = await res.json();
       if (res.ok && data.account) {
+        if (data.token) {
+          setAuthToken(data.token);
+        }
         onLoginSuccess(data.account);
         onClose();
         return;
