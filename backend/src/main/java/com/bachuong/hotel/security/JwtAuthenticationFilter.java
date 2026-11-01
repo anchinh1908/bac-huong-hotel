@@ -1,5 +1,6 @@
 package com.bachuong.hotel.security;
 
+import com.bachuong.hotel.service.RedisService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
+    @Autowired(required = false)
+    private RedisService redisService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -30,7 +34,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
 
-            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+            // Kiểm tra Token hợp lệ VÀ chưa bị thu hồi trong Redis Blacklist
+            boolean isBlacklisted = (redisService != null && StringUtils.hasText(jwt) && redisService.isTokenBlacklisted(jwt));
+
+            if (StringUtils.hasText(jwt) && !isBlacklisted && tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromToken(jwt);
                 String role = tokenProvider.getRoleFromToken(jwt);
 

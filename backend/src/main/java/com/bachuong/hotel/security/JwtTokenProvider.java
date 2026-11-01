@@ -76,6 +76,18 @@ public class JwtTokenProvider {
     }
 
     /**
+     * Tính toán thời gian hiệu lực còn lại (ms) của JWT token để lưu vào Redis Blacklist khi Logout
+     */
+    public long getRemainingValidityMs(String token) {
+        Claims claims = getClaims(token);
+        if (claims == null || claims.getExpiration() == null) {
+            return 0L;
+        }
+        long diff = claims.getExpiration().getTime() - System.currentTimeMillis();
+        return Math.max(diff, 0L);
+    }
+
+    /**
      * Kiểm tra tính hợp lệ và chữ ký của JWT token
      */
     public boolean validateToken(String token) {

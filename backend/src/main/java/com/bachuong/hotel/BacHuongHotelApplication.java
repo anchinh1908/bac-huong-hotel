@@ -10,6 +10,7 @@ public class BacHuongHotelApplication {
         System.out.println("==========================================================");
         System.out.println("🚀 BACKEND KHÁCH SẠN BẮC HƯƠNG ĐANG CHẠY CỔNG: 8080");
         System.out.println("📌 Kết nối MySQL: bachuong_hotel");
+        System.out.println("⚡ Tích hợp Redis: Cache Phòng & KS, OTP TTL, JWT Blacklist & Distributed Lock");
         System.out.println("📌 Sẵn sàng phục vụ API & Tự động gửi Email xác nhận!");
         System.out.println("==========================================================");
     }

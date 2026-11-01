@@ -2,17 +2,18 @@ package com.bachuong.hotel.controller;
 
 import com.bachuong.hotel.model.Account;
 import com.bachuong.hotel.repository.AccountRepository;
+import com.bachuong.hotel.security.JwtTokenProvider;
 import com.bachuong.hotel.service.EmailService;
+import com.bachuong.hotel.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
-
-import com.bachuong.hotel.security.JwtTokenProvider;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,6 +31,9 @@ public class AuthController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired(required = false)
+    private RedisService redisService;
 
     // 1. Đăng nhập truyền thống (Username hoặc Email + Password) -> Trả về JWT Token
     @PostMapping("/login")
@@ -73,6 +77,22 @@ public class AuthController {
         res.put("token", token);
         res.put("account", sanitizeAccount(account));
         return ResponseEntity.ok(res);
+    }
+
+    // 1.1. Đăng xuất & Thu hồi JWT Token vào Redis Blacklist
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            long remainingMs = jwtTokenProvider.getRemainingValidityMs(token);
+            if (redisService != null && remainingMs > 0) {
+                redisService.blacklistToken(token, remainingMs);
+            }
+        }
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Đã đăng xuất và thu hồi JWT Token trên Redis thành công!"
+        ));
     }
 
     // 2. Đăng nhập nhanh bằng Google (1-Click Google Login) -> Trả về JWT Token
@@ -196,7 +216,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("success", true, "message", "Đổi mật khẩu thành công!"));
     }
 
-    // 5. Yêu cầu mã OTP qua Gmail khi quên mật khẩu
+    // 5. Yêu cầu mã OTP qua Gmail khi quên mật khẩu (Lưu OTP trên Redis với TTL 10 phút)
     @PostMapping("/forgot-password/request-otp")
     public ResponseEntity<?> requestResetOtp(@RequestBody Map<String, String> body) {
         String email = body.get("email");
@@ -208,6 +228,13 @@ public class AuthController {
         Account account = accOpt.get();
         // Tạo mã OTP ngẫu nhiên 6 chữ số
         String otp = String.format("%06d", new Random().nextInt(999999));
+
+        // Lưu OTP vào Redis với TTL tự hủy sau 10 phút
+        if (redisService != null) {
+            redisService.saveOtp(email, otp, 10);
+        }
+
+        // Đồng bộ dự phòng trong DB
         account.setResetOtp(otp);
         account.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
         accountRepository.save(account);
@@ -217,11 +244,11 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "Mã OTP đã được gửi đến email " + email + ". Vui lòng kiểm tra hộp thư!"
+                "message", "Mã OTP đã được gửi đến email " + email + " (Hiệu lực 10 phút). Vui lòng kiểm tra hộp thư!"
         ));
     }
 
-    // 6. Xác thực OTP và đặt lại mật khẩu mới qua Gmail
+    // 6. Xác thực OTP từ Redis và đặt lại mật khẩu mới qua Gmail
     @PostMapping("/forgot-password/verify-and-reset")
     public ResponseEntity<?> verifyAndResetPassword(@RequestBody Map<String, String> body) {
         String email = body.get("email");
@@ -234,12 +261,23 @@ public class AuthController {
         }
 
         Account account = accOpt.get();
-        if (account.getResetOtp() == null || !account.getResetOtp().equals(otp)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Mã OTP không chính xác!"));
-        }
 
-        if (account.getOtpExpiry() == null || account.getOtpExpiry().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Mã OTP đã hết hạn!"));
+        // Ưu tiên kiểm tra OTP từ Redis (Tốc độ cao & tự hết hạn theo TTL)
+        String redisOtp = (redisService != null) ? redisService.getOtp(email) : null;
+        if (redisOtp != null) {
+            if (!redisOtp.equals(otp)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Mã OTP không chính xác!"));
+            }
+            // Xóa ngay OTP trên Redis sau khi xác thực thành công
+            redisService.deleteOtp(email);
+        } else {
+            // Fallback kiểm tra trong DB nếu Redis chưa lưu
+            if (account.getResetOtp() == null || !account.getResetOtp().equals(otp)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Mã OTP không chính xác!"));
+            }
+            if (account.getOtpExpiry() == null || account.getOtpExpiry().isBefore(LocalDateTime.now())) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Mã OTP đã hết hạn!"));
+            }
         }
 
         account.setPassword(passwordEncoder.encode(newPassword));

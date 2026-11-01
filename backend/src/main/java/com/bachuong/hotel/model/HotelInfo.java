@@ -5,12 +5,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "hotel_info")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class HotelInfo {
+public class HotelInfo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     private Long id = 1L; // Cố định id = 1 cho thông tin khách sạn

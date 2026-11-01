@@ -12,7 +12,7 @@
 	<artifactId>hotel-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Khach San Bac Huong Backend</name>
-	<description>Spring Boot 3 + MySQL Backend cho Khách Sạn Bắc Hương</description>
+	<description>Spring Boot 3 + MySQL + Redis Backend cho Khách Sạn Bắc Hương</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>
@@ -48,7 +48,17 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
-		<!-- 6. JJWT (JSON Web Token) -->
+		<!-- 6. Spring Data Redis & Spring Cache (Caching, OTP TTL, JWT Blacklist, Distributed Lock) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+
+		<!-- 7. JJWT (JSON Web Token) -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
@@ -67,7 +77,7 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- 7. Lombok (Tự động sinh getter/setter) -->
+		<!-- 8. Lombok (Tự động sinh getter/setter) -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

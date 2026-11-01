@@ -7,7 +7,10 @@ import com.bachuong.hotel.repository.BookingRepository;
 import com.bachuong.hotel.repository.HotelInfoRepository;
 import com.bachuong.hotel.repository.RoomRepository;
 import com.bachuong.hotel.service.EmailService;
+import com.bachuong.hotel.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +36,9 @@ public class HotelController {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired(required = false)
+    private RedisService redisService;
 
     @Autowired(required = false)
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
@@ -72,19 +78,21 @@ public class HotelController {
         return info;
     }
 
-    // 1. API: Lấy thông tin khách sạn Bắc Hương từ MySQL
+    // 1. API: Lấy thông tin khách sạn Bắc Hương (Tích hợp Redis Cache 'hotelInfo')
     @GetMapping("/hotel-info")
-    public ResponseEntity<?> getHotelInfo() {
+    @Cacheable(value = "hotelInfo", key = "'default'")
+    public HotelInfo getHotelInfo() {
         Optional<HotelInfo> opt = hotelInfoRepository.findById(1L);
         if (opt.isPresent()) {
-            return ResponseEntity.ok(opt.get());
+            return opt.get();
         }
         HotelInfo defaultInfo = getDefaultHotelInfo();
-        return ResponseEntity.ok(hotelInfoRepository.save(defaultInfo));
+        return hotelInfoRepository.save(defaultInfo);
     }
 
-    // 1.1. API (Admin): Cập nhật thông tin khách sạn (Tên, địa chỉ, sđt, giờ giấc, chính sách...)
+    // 1.1. API (Admin): Cập nhật thông tin khách sạn -> Tự động xóa Cache Redis 'hotelInfo'
     @PutMapping("/hotel-info")
+    @CacheEvict(value = "hotelInfo", allEntries = true)
     public ResponseEntity<?> updateHotelInfo(@RequestBody HotelInfo updated) {
         HotelInfo existing = hotelInfoRepository.findById(1L).orElseGet(this::getDefaultHotelInfo);
         
@@ -141,8 +149,9 @@ public class HotelController {
         return ResponseEntity.ok(resp);
     }
 
-    // 1.2. API (Admin): Khôi phục thông tin khách sạn về mặc định ban đầu
+    // 1.2. API (Admin): Khôi phục thông tin khách sạn về mặc định -> Xóa Cache Redis 'hotelInfo'
     @PostMapping("/hotel-info/reset")
+    @CacheEvict(value = "hotelInfo", allEntries = true)
     public ResponseEntity<?> resetHotelInfo() {
         HotelInfo defaultInfo = getDefaultHotelInfo();
         HotelInfo saved = hotelInfoRepository.save(defaultInfo);
@@ -153,14 +162,16 @@ public class HotelController {
         return ResponseEntity.ok(resp);
     }
 
-    // 2. API: Lấy danh sách toàn bộ phòng (kèm trạng thái Xanh/Đỏ/Vàng)
+    // 2. API: Lấy danh sách toàn bộ phòng (Tích hợp Redis Cache 'rooms' tốc độ cao)
     @GetMapping("/rooms")
-    public ResponseEntity<List<Room>> getAllRooms() {
-        return ResponseEntity.ok(roomRepository.findAll());
+    @Cacheable(value = "rooms", key = "'all'")
+    public List<Room> getAllRooms() {
+        return roomRepository.findAll();
     }
 
-    // 2.1. API (Admin): Thêm phòng mới
+    // 2.1. API (Admin): Thêm phòng mới -> Xóa Cache Redis 'rooms'
     @PostMapping("/rooms")
+    @CacheEvict(value = "rooms", allEntries = true)
     public ResponseEntity<?> createRoom(@RequestBody Room room) {
         if (room.getRoomNumber() == null || room.getPricePerNight() == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng nhập số phòng và giá phòng!"));
@@ -172,8 +183,9 @@ public class HotelController {
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    // 2.2. API (Admin): Cập nhật thông tin phòng (Tên, giá, sức chứa, ảnh...)
+    // 2.2. API (Admin): Cập nhật thông tin phòng -> Xóa Cache Redis 'rooms'
     @PutMapping("/rooms/{id}")
+    @CacheEvict(value = "rooms", allEntries = true)
     public ResponseEntity<?> updateRoomDetails(@PathVariable Long id, @RequestBody Room updated) {
         Optional<Room> opt = roomRepository.findById(id);
         if (opt.isEmpty()) {
@@ -195,8 +207,9 @@ public class HotelController {
         return ResponseEntity.ok(saved);
     }
 
-    // 2.3. API (Admin): Xóa phòng khỏi khách sạn
+    // 2.3. API (Admin): Xóa phòng khỏi khách sạn -> Xóa Cache Redis 'rooms'
     @DeleteMapping("/rooms/{id}")
+    @CacheEvict(value = "rooms", allEntries = true)
     public ResponseEntity<?> deleteRoom(@PathVariable Long id) {
         if (!roomRepository.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Không tìm thấy phòng!"));
@@ -205,8 +218,9 @@ public class HotelController {
         return ResponseEntity.ok(Map.of("success", true, "message", "Đã xóa phòng thành công!"));
     }
 
-    // 3. API: Lễ tân cập nhật trạng thái phòng (AVAILABLE, OCCUPIED, CLEANING)
+    // 3. API: Lễ tân cập nhật trạng thái phòng (AVAILABLE, OCCUPIED, CLEANING) -> Xóa Cache Redis 'rooms'
     @PutMapping("/rooms/{id}/status")
+    @CacheEvict(value = "rooms", allEntries = true)
     public ResponseEntity<?> updateRoomStatus(
             @PathVariable Long id,
             @RequestParam Room.RoomStatus status,
@@ -243,7 +257,7 @@ public class HotelController {
         return ResponseEntity.ok(bookingRepository.findAllByOrderByCreatedAtDesc());
     }
 
-    // 5. API: Khách hàng Đặt phòng -> Lưu DB với trạng thái PENDING (Chờ duyệt), Gửi Email thông báo tới Khách Sạn!
+    // 5. API: Khách hàng Đặt phòng -> Sử dụng Redis Distributed Lock chống đặt trùng phòng (Overbooking)
     @PostMapping("/bookings")
     public ResponseEntity<?> createBooking(@RequestBody Booking booking) {
         if (booking.getGuestName() == null || booking.getGuestPhone() == null || booking.getGuestEmail() == null) {
@@ -262,39 +276,57 @@ public class HotelController {
             return ResponseEntity.badRequest().body(Map.of("message", "Số điện thoại không đúng định dạng (Phải gồm 10 số, ví dụ: 0912345678, đầu số 03, 05, 07, 08, 09)!"));
         }
 
-        booking.setGuestEmail(emailClean);
-        booking.setGuestPhone(phoneClean);
-
-        // Tạo mã đơn ngẫu nhiên
-        booking.setBookingCode("BH-" + (int)(1000 + Math.random() * 9000));
-
-        // Tự động tính ngày trả phòng nếu chưa có
-        if (booking.getCheckOutDate() == null && booking.getCheckInDate() != null && booking.getNights() != null) {
-            booking.setCheckOutDate(booking.getCheckInDate().plusDays(booking.getNights()));
+        // 3. Khóa phân tán Redis (Distributed Lock) để chống 2 khách đặt cùng 1 phòng tại cùng 1 mili-giây
+        Long roomId = booking.getRoomId();
+        if (redisService != null && roomId != null) {
+            boolean lockAcquired = redisService.acquireRoomBookingLock(roomId, 10);
+            if (!lockAcquired) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                        "message", "Phòng này đang có khách hàng khác thao tác đặt cùng lúc. Vui lòng thử lại sau vài giây!"
+                ));
+            }
         }
-        
-        // Đơn mới tạo luôn ở trạng thái CHỜ XÁC NHẬN (PENDING)
-        booking.setStatus(Booking.BookingStatus.PENDING);
 
-        Booking savedBooking = bookingRepository.save(booking);
-
-        // BƯỚC 1: KÍCH HOẠT GỬI EMAIL THÔNG BÁO TỚI KHÁCH SẠN BẮC HƯƠNG (anchinh794@gmail.com)
         try {
-            emailService.sendNewBookingAlertToHotel(savedBooking);
-        } catch (Exception e) {
-            System.err.println("Gửi email tới khách sạn lỗi: " + e.getMessage());
+            booking.setGuestEmail(emailClean);
+            booking.setGuestPhone(phoneClean);
+
+            // Tạo mã đơn ngẫu nhiên
+            booking.setBookingCode("BH-" + (int)(1000 + Math.random() * 9000));
+
+            // Tự động tính ngày trả phòng nếu chưa có
+            if (booking.getCheckOutDate() == null && booking.getCheckInDate() != null && booking.getNights() != null) {
+                booking.setCheckOutDate(booking.getCheckInDate().plusDays(booking.getNights()));
+            }
+            
+            // Đơn mới tạo luôn ở trạng thái CHỜ XÁC NHẬN (PENDING)
+            booking.setStatus(Booking.BookingStatus.PENDING);
+
+            Booking savedBooking = bookingRepository.save(booking);
+
+            // BƯỚC 1: KÍCH HOẠT GỬI EMAIL THÔNG BÁO TỚI KHÁCH SẠN BẮC HƯƠNG (anchinh794@gmail.com)
+            try {
+                emailService.sendNewBookingAlertToHotel(savedBooking);
+            } catch (Exception e) {
+                System.err.println("Gửi email tới khách sạn lỗi: " + e.getMessage());
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Đã gửi yêu cầu đặt phòng thành công! Đơn đặt đang ở trạng thái Chờ Khách Sạn Xác Nhận.");
+            response.put("booking", savedBooking);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } finally {
+            if (redisService != null && roomId != null) {
+                redisService.releaseRoomBookingLock(roomId);
+            }
         }
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Đã gửi yêu cầu đặt phòng thành công! Đơn đặt đang ở trạng thái Chờ Khách Sạn Xác Nhận.");
-        response.put("booking", savedBooking);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // 5.1. API: Lễ tân / Admin DUYỆT ĐƠN ĐẶT PHÒNG -> Khóa phòng sang ĐỎ (OCCUPIED) và Bắn Email duyệt tới Khách Hàng!
+    // 5.1. API: Lễ tân / Admin DUYỆT ĐƠN ĐẶT PHÒNG -> Khóa phòng sang ĐỎ (OCCUPIED), Xóa Cache 'rooms' & Gửi Email
     @PutMapping("/bookings/{id}/approve")
+    @CacheEvict(value = "rooms", allEntries = true)
     public ResponseEntity<?> approveBooking(@PathVariable Long id) {
         Optional<Booking> bookingOpt = bookingRepository.findById(id);
         if (bookingOpt.isEmpty()) {
@@ -333,8 +365,9 @@ public class HotelController {
         return ResponseEntity.ok(response);
     }
 
-    // 5.2. API: Lễ tân / Admin TỪ CHỐI ĐƠN ĐẶT PHÒNG -> Giữ nguyên phòng AVAILABLE và Bắn Email từ chối kèm lý do cho khách
+    // 5.2. API: Lễ tân / Admin TỪ CHỐI ĐƠN ĐẶT PHÒNG -> Giữ nguyên phòng AVAILABLE, Xóa Cache 'rooms' & Gửi Email
     @PutMapping("/bookings/{id}/reject")
+    @CacheEvict(value = "rooms", allEntries = true)
     public ResponseEntity<?> rejectBooking(
             @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body) {
@@ -379,8 +412,9 @@ public class HotelController {
         return ResponseEntity.ok(response);
     }
 
-    // 6. API: Hủy đơn đặt phòng (Giải phóng phòng về trạng thái Sẵn sàng)
+    // 6. API: Hủy đơn đặt phòng (Giải phóng phòng về trạng thái Sẵn sàng & Xóa Cache 'rooms')
     @DeleteMapping("/bookings/{id}")
+    @CacheEvict(value = "rooms", allEntries = true)
     public ResponseEntity<?> cancelBooking(@PathVariable Long id) {
         Optional<Booking> bookingOpt = bookingRepository.findById(id);
         if (bookingOpt.isEmpty()) {

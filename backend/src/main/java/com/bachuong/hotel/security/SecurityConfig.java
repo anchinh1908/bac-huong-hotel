@@ -66,7 +66,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // API Công khai cho Khách hàng & luồng xác thực (Không cần JWT)
-                .requestMatchers("/api/auth/login", "/api/auth/google", "/api/auth/register", "/api/auth/forgot-password/**").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/logout", "/api/auth/google", "/api/auth/register", "/api/auth/forgot-password/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/hotel-info/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/bookings").permitAll()

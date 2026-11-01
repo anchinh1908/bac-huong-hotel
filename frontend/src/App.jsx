@@ -214,8 +214,9 @@ export default function App() {
     }
   };
 
-  // Đăng xuất chung cho mọi tài khoản
+  // Đăng xuất chung cho mọi tài khoản (Đồng thời thu hồi JWT Token vào Redis Blacklist trên Backend)
   const handleLogout = () => {
+    authFetch(`${API_BASE}/auth/logout`, { method: 'POST' }).catch(() => {});
     setUser(null);
     localStorage.removeItem('bh_user');
     clearAuthToken();
